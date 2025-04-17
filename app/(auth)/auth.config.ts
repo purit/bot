@@ -6,8 +6,7 @@ export const authConfig = {
     newUser: '/',
   },
   providers: [
-    // added later in auth.ts since it requires bcrypt which is only compatible with Node.js
-    // while this file is also used in non-Node.js environments
+    // ...
   ],
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
@@ -15,24 +14,24 @@ export const authConfig = {
       const isOnChat = nextUrl.pathname.startsWith('/');
       const isOnRegister = nextUrl.pathname.startsWith('/register');
       const isOnLogin = nextUrl.pathname.startsWith('/login');
+      const isApiRoute = nextUrl.pathname.startsWith('/api/');
 
-      if (isLoggedIn && (isOnLogin || isOnRegister)) {
-        return Response.redirect(new URL('/', nextUrl as unknown as URL));
-      }
-
+      // อนุญาตให้เข้าถึง Register และ Login เสมอ
       if (isOnRegister || isOnLogin) {
-        return true; // Always allow access to register and login pages
+        return true;
       }
 
+      // สำหรับ API Routes (/api/) ต้อง Login เท่านั้น
+      if (isApiRoute) {
+        return isLoggedIn;
+      }
+
+      // สำหรับหน้า Chat (และหน้าอื่นๆ ที่ไม่ใช่ Register/Login/API)
       if (isOnChat) {
-        if (isLoggedIn) return true;
-        return false; // Redirect unauthenticated users to login page
+        return isLoggedIn; // ต้อง Login เพื่อเข้าถึง
       }
 
-      if (isLoggedIn) {
-        return Response.redirect(new URL('/', nextUrl as unknown as URL));
-      }
-
+      // กรณีอื่นๆ (อาจจะไม่จำเป็น แต่เพื่อความชัดเจน)
       return true;
     },
   },
